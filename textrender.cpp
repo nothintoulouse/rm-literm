@@ -20,6 +20,8 @@
 #include <QCursor>
 #include <QFontMetrics>
 #include <QGuiApplication>
+#include <QQmlComponent>
+#include <QQmlEngine>
 #include <cmath>
 
 #include "parser.h"
@@ -103,6 +105,7 @@ TextRender::TextRender(QQuickItem* parent)
 
 TextRender::~TextRender()
 {
+    delete m_screenModeItem;
 }
 
 const QStringList TextRender::printableLinesFromCursor(int lines)
@@ -124,6 +127,59 @@ void TextRender::componentComplete()
 {
     QQuickItem::componentComplete();
     m_terminal.init();
+
+    if (width() > 0 && height() > 0)
+        createScreenModeItem();
+}
+
+void TextRender::createScreenModeItem()
+{
+    if (m_screenModeItem)
+        return;
+
+    QQmlEngine* engine = qmlEngine(this);
+    if (!engine)
+        return;
+
+    // PADD: pin the e-ink waveform to UI (crisp/full draw) so terminal text
+    // draws and STAYS black instead of ghosting back to gray on the Gallery 3
+    // panel. This is the inverse of upstream PR #15, which dropped to Pen/fast
+    // mode for typing speed -- that fast waveform is exactly what caused the
+    // washed-out look. We trade a little refresh latency for legibility.
+    static const char* qml =
+        "import QtQuick 2.0\n"
+        "import xofm.libs.epaper 1.0 as Epaper\n"
+        "Epaper.ScreenModeItem { mode: Epaper.ScreenModeItem.UI }";
+
+    QQmlComponent component(engine);
+    component.setData(QByteArray(qml), QUrl());
+    if (component.status() != QQmlComponent::Ready)
+        return;
+
+    QObject* obj = component.create(qmlContext(this));
+    m_screenModeItem = qobject_cast<QQuickItem*>(obj);
+    if (!m_screenModeItem) {
+        delete obj;
+        return;
+    }
+
+    m_screenModeItem->setParentItem(this);
+    m_screenModeItem->setWidth(width());
+    m_screenModeItem->setHeight(height());
+    m_screenModeItem->setVisible(true);
+}
+
+void TextRender::geometryChange(const QRectF& newGeometry, const QRectF& oldGeometry)
+{
+    QQuickItem::geometryChange(newGeometry, oldGeometry);
+
+    if (!m_screenModeItem && newGeometry.width() > 0 && newGeometry.height() > 0)
+        createScreenModeItem();
+
+    if (m_screenModeItem && newGeometry.width() > 0 && newGeometry.height() > 0) {
+        m_screenModeItem->setWidth(newGeometry.width());
+        m_screenModeItem->setHeight(newGeometry.height());
+    }
 }
 
 void TextRender::copy()
