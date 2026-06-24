@@ -244,6 +244,9 @@ void Terminal::keyPress(int key, int modifiers, const QString& text)
 {
     QString toWrite;
 
+    qWarning() << "PADD-DIAG keyPress key=0x" << QString::number(key, 16)
+               << "mod=" << modifiers << "text=" << text;
+
     if (key > 0xFFFF) {
         int modcode = (modifiers & Qt::ShiftModifier ? 1 : 0) | (modifiers & Qt::AltModifier ? 2 : 0) | (modifiers & MyControlModifier ? 4 : 0);
 

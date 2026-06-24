@@ -19,6 +19,7 @@
 #include <QClipboard>
 #include <QCursor>
 #include <QFontMetrics>
+#include <QDebug>
 #include <QGuiApplication>
 #include <QQmlComponent>
 #include <QQmlEngine>
@@ -138,8 +139,10 @@ void TextRender::createScreenModeItem()
         return;
 
     QQmlEngine* engine = qmlEngine(this);
-    if (!engine)
+    if (!engine) {
+        qWarning() << "PADD-DIAG: createScreenModeItem: qmlEngine is NULL";
         return;
+    }
 
     // PADD: pin the e-ink waveform to UI (crisp/full draw) so terminal text
     // draws and STAYS black instead of ghosting back to gray on the Gallery 3
@@ -153,15 +156,20 @@ void TextRender::createScreenModeItem()
 
     QQmlComponent component(engine);
     component.setData(QByteArray(qml), QUrl());
-    if (component.status() != QQmlComponent::Ready)
+    if (component.status() != QQmlComponent::Ready) {
+        qWarning() << "PADD-DIAG: ScreenModeItem component NOT Ready, status=" << component.status()
+                   << "errors=" << component.errorString();
         return;
+    }
 
     QObject* obj = component.create(qmlContext(this));
     m_screenModeItem = qobject_cast<QQuickItem*>(obj);
     if (!m_screenModeItem) {
+        qWarning() << "PADD-DIAG: ScreenModeItem create() failed / not a QQuickItem";
         delete obj;
         return;
     }
+    qWarning() << "PADD-DIAG: ScreenModeItem CREATED OK, mode pinned to UI";
 
     m_screenModeItem->setParentItem(this);
     m_screenModeItem->setWidth(width());
