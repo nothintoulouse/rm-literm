@@ -152,7 +152,7 @@ void TextRender::createScreenModeItem()
     static const char* qml =
         "import QtQuick 2.0\n"
         "import xofm.libs.epaper 1.0 as Epaper\n"
-        "Epaper.ScreenModeItem { mode: Epaper.ScreenModeItem.UI }";
+        "Epaper.ScreenModeItem { mode: Epaper.ScreenModeItem.Content }";
 
     QQmlComponent component(engine);
     component.setData(QByteArray(qml), QUrl());
@@ -169,7 +169,7 @@ void TextRender::createScreenModeItem()
         delete obj;
         return;
     }
-    qWarning() << "PADD-DIAG: ScreenModeItem CREATED OK, mode pinned to UI";
+    qWarning() << "PADD-DIAG: ScreenModeItem CREATED OK, mode pinned to Content";
 
     m_screenModeItem->setParentItem(this);
     m_screenModeItem->setWidth(width());

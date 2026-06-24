@@ -244,9 +244,6 @@ void Terminal::keyPress(int key, int modifiers, const QString& text)
 {
     QString toWrite;
 
-    qWarning() << "PADD-DIAG keyPress key=0x" << QString::number(key, 16)
-               << "mod=" << modifiers << "text=" << text;
-
     if (key > 0xFFFF) {
         int modcode = (modifiers & Qt::ShiftModifier ? 1 : 0) | (modifiers & Qt::AltModifier ? 2 : 0) | (modifiers & MyControlModifier ? 4 : 0);
 
@@ -397,22 +394,6 @@ void Terminal::keyPress(int key, int modifiers, const QString& text)
                 toWrite += QChar(0x9B);
             else
                 toWrite += QString(1, '\e');
-        }
-
-        // PADD: physical-keyboard dead keys land here (key > 0xFFFF, no case
-        // above) and were silently dropped. `^` (Shift+6) arrives as
-        // Qt::Key_Dead_Circumflex -> "produces nothing" (issue #7). Emit the
-        // literal char for the dead keys, then fall back to any text the event
-        // still carries for other unhandled high keys.
-        if (toWrite.isEmpty()) {
-            switch (key) {
-            case Qt::Key_Dead_Circumflex: toWrite += QChar('^'); break;
-            case Qt::Key_Dead_Grave:      toWrite += QChar('`'); break;
-            case Qt::Key_Dead_Tilde:      toWrite += QChar('~'); break;
-            default: break;
-            }
-            if (toWrite.isEmpty() && !text.isEmpty())
-                toWrite += text;
         }
 
         if (!toWrite.isEmpty()) {
